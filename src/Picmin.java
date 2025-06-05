@@ -145,6 +145,7 @@ public class Picmin extends JPanel implements ActionListener, KeyListener {
 
             // Create a timer that turns off the whistle after 2 seconds (2000 ms)
             new Timer(2000, new ActionListener() {
+
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     drawWhistle = false;
