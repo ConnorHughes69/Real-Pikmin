@@ -12,7 +12,7 @@ public class Main {
         frame.setResizable(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        Picmin picmin = new Picmin();
+        Pikmin picmin = new Pikmin();
         frame.add(picmin);
         frame.pack();
         picmin.requestFocus();
