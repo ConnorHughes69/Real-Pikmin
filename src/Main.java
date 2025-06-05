@@ -2,8 +2,8 @@ import javax.swing.*;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        int boardWidth = 360;
-        int boardHeight = 640;
+        int boardWidth = 1920;
+        int boardHeight = 1040;
 
         JFrame frame = new JFrame("Flappy Bird");
         // frame.setVisible(true);

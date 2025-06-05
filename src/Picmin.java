@@ -3,21 +3,28 @@ import java.awt.event.*;
 import javax.swing.*;
 
 
+
 public class Picmin extends JPanel implements ActionListener, KeyListener {
-    int boardWidth = 360;
-    int boardHeight = 640;
+    int boardWidth = 1920;
+    int boardHeight = 1080;
 
 
     // Images
     Image backgroundImg;
     Image characterImg;
+    Image whistle;
 
 
     // Character properties
     int characterX = boardWidth / 8;
     int characterY = boardHeight / 2;
-    int characterWidth = 34;
-    int characterHeight = 24;
+    int characterWidth = 64;
+    int characterHeight = 48;
+
+    boolean drawWhistle = false;
+
+    int mousex;
+    int mousey;
 
 
     class Character {
@@ -57,7 +64,7 @@ public class Picmin extends JPanel implements ActionListener, KeyListener {
         // Load images (grass is background, character1 is the player)
         backgroundImg = new ImageIcon(getClass().getResource("grass.png")).getImage();
         characterImg = new ImageIcon(getClass().getResource("Character1.png")).getImage();
-
+        whistle = new ImageIcon(getClass().getResource("whistle.png")).getImage();
 
         character = new Character(characterImg);
 
@@ -78,6 +85,25 @@ public class Picmin extends JPanel implements ActionListener, KeyListener {
     public void draw(Graphics g) {
         g.drawImage(backgroundImg, 0, 0, boardWidth, boardHeight, null);
         g.drawImage(character.img, character.x, character.y, character.width, character.height, null);
+
+        if (drawWhistle) {
+            Graphics2D g2d = (Graphics2D) g.create();
+
+            // Center of the character
+            int centerX = character.x + character.width / 2;
+            int centerY = character.y + character.height / 2;
+
+            // Angle to face the mouse
+            double angle = Math.atan2(mousey - centerY, mousex - centerX);
+
+            // Set rotation around character's center
+            g2d.rotate(angle, centerX, centerY);
+
+            // Draw the whistle offset from character center
+            g2d.drawImage(whistle, centerX + 60, centerY - 50, 200, 200, null);
+
+            g2d.dispose();
+        }
     }
 
 
@@ -91,6 +117,10 @@ public class Picmin extends JPanel implements ActionListener, KeyListener {
         // Clamp within bounds
         character.x = Math.max(0, Math.min(character.x, boardWidth - character.width));
         character.y = Math.max(0, Math.min(character.y, boardHeight - character.height));
+
+        Point mousePosition = MouseInfo.getPointerInfo().getLocation();
+        mousex = (int) mousePosition.getX();
+        mousey = (int) mousePosition.getY();
     }
 
 
@@ -105,12 +135,25 @@ public class Picmin extends JPanel implements ActionListener, KeyListener {
     public void keyPressed(KeyEvent e) {
         int key = e.getKeyCode();
 
-
         if (key == KeyEvent.VK_W) upPressed = true;
         if (key == KeyEvent.VK_S) downPressed = true;
         if (key == KeyEvent.VK_A) leftPressed = true;
         if (key == KeyEvent.VK_D) rightPressed = true;
+
+        if (key == KeyEvent.VK_E) {
+            drawWhistle = true;
+
+            // Create a timer that turns off the whistle after 2 seconds (2000 ms)
+            new Timer(2000, new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    drawWhistle = false;
+                    ((Timer) e.getSource()).stop(); // stop the timer
+                }
+            }).start();
+        }
     }
+
 
 
     @Override
