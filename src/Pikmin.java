@@ -9,11 +9,8 @@ public class Pikmin extends JPanel implements ActionListener, KeyListener {
     int boardHeight = 720;
 
     // Images
-    Image backgroundImg;
-    Image whistleImg;
-    Image pikminImg;
-    Image idleImage;
-
+    Image backgroundImg, whistleImg, pikminImg, idleImage;
+    Image flowerImg;
     Image[] backWalkFrames = new Image[7];
     Image[] forwardWalkFrames = new Image[7];
     Image[] leftWalkFrames = new Image[7];
@@ -24,9 +21,8 @@ public class Pikmin extends JPanel implements ActionListener, KeyListener {
     int animationSpeed = 4;
 
     class Character {
-        int x = boardWidth / 2;
-        int y = boardHeight / 2;
-        int width = 100, height = 100;
+        int x = boardWidth / 2, y = boardHeight / 2;
+        int width = 85, height = 85;
         Image img;
 
         Character(Image img) {
@@ -38,7 +34,9 @@ public class Pikmin extends JPanel implements ActionListener, KeyListener {
         int x, y;
         int width = 90, height = 90;
         Image img;
-        boolean following = false;
+        boolean following = false, thrown = false;
+        double vx = 0, vy = 0;
+        int throwTimer = 0, throwDuration = 30;
 
         PikminUnit(int x, int y, Image img) {
             this.x = x;
@@ -47,12 +45,37 @@ public class Pikmin extends JPanel implements ActionListener, KeyListener {
         }
 
         void follow(int targetX, int targetY) {
-            int dx = targetX - x;
-            int dy = targetY - y;
+            int dx = targetX - x, dy = targetY - y;
             double dist = Math.sqrt(dx * dx + dy * dy);
             if (dist > 30) {
                 x += (int) (dx / dist * 5);
                 y += (int) (dy / dist * 5);
+            }
+        }
+
+        void throwing(int mouseX, int mouseY) {
+            following = false;
+            thrown = true;
+            throwTimer = throwDuration;
+            int centerX = x + width / 2;
+            int centerY = y + height / 2;
+            int dx = mouseX - centerX;
+            int dy = mouseY - centerY;
+            double dist = Math.sqrt(dx * dx + dy * dy);
+            double speed = 10;
+            vx = (dx / dist) * speed;
+            vy = (dy / dist) * speed;
+        }
+
+        void updateThrow() {
+            if (thrown && throwTimer > 0) {
+                x += vx;
+                y += vy;
+                throwTimer--;
+            } else {
+                thrown = false;
+                vx = 0;
+                vy = 0;
             }
         }
 
@@ -61,12 +84,26 @@ public class Pikmin extends JPanel implements ActionListener, KeyListener {
         }
     }
 
+    class Flower {
+        int x, y;
+        boolean harvested;
+
+        Flower(int x, int y) {
+            this.x = x;
+            this.y = y;
+            this.harvested = false;
+        }
+
+        Rectangle getBounds() {
+            return new Rectangle(x, y, 350, 350);
+        }
+    }
+
     Character character;
     ArrayList<PikminUnit> pikminList = new ArrayList<>();
-
+    ArrayList<Flower> flowerList = new ArrayList<>();
     boolean upPressed, downPressed, leftPressed, rightPressed;
     boolean drawWhistle = false;
-
     int mousex, mousey;
     Timer gameLoop;
     int moveSpeed = 5;
@@ -76,27 +113,26 @@ public class Pikmin extends JPanel implements ActionListener, KeyListener {
         setFocusable(true);
         addKeyListener(this);
 
-        backgroundImg = new ImageIcon(getClass().getResource("grass.png")).getImage();
+        backgroundImg = new ImageIcon(getClass().getResource("map.png")).getImage();
         whistleImg = new ImageIcon(getClass().getResource("whistle.png")).getImage();
         pikminImg = new ImageIcon(getClass().getResource("Pikmin1.png")).getImage();
         idleImage = new ImageIcon(getClass().getResource("/OmarAnimations/OmarAnimation1idle.png")).getImage();
+        flowerImg = new ImageIcon(getClass().getResource("flowerRed1.png")).getImage();
 
         for (int i = 0; i < 7; i++) {
             backWalkFrames[i] = new ImageIcon(getClass().getResource("/OmarAnimations/OmarAnimationback" + (i + 1) + ".png")).getImage();
             forwardWalkFrames[i] = new ImageIcon(getClass().getResource("/OmarAnimations/OmarAnimationup" + (i + 1) + ".png")).getImage();
             leftWalkFrames[i] = new ImageIcon(getClass().getResource("/OmarAnimations/OmarAnimationleft" + (i + 1) + ".png")).getImage();
-        }
-
-        // Generate rightWalkFrames by flipping leftWalkFrames
-        for (int i = 0; i < 7; i++) {
             rightWalkFrames[i] = flipImageHorizontally(leftWalkFrames[i]);
         }
 
         character = new Character(idleImage);
+        for (int i = 0; i < 5; i++) pikminList.add(new PikminUnit(100 + i * 60, 600, pikminImg));
 
-        for (int i = 0; i < 5; i++) {
-            pikminList.add(new PikminUnit(100 + i * 60, 600, pikminImg));
-        }
+        // Add 3 flowers
+        flowerList.add(new Flower(65, 110));
+        flowerList.add(new Flower(900, 50));
+        flowerList.add(new Flower(800, 500));
 
         gameLoop = new Timer(1000 / 60, this);
         gameLoop.start();
@@ -119,11 +155,15 @@ public class Pikmin extends JPanel implements ActionListener, KeyListener {
 
     public void draw(Graphics g) {
         g.drawImage(backgroundImg, 0, 0, boardWidth, boardHeight, null);
-        g.drawImage(character.img, character.x, character.y, character.width, character.height, null);
 
-        for (PikminUnit p : pikminList) {
-            g.drawImage(p.img, p.x, p.y, p.width, p.height, null);
+        for (Flower f : flowerList) {
+            if (!f.harvested) {
+                g.drawImage(flowerImg, f.x, f.y, 200, 200, null);
+            }
         }
+
+        g.drawImage(character.img, character.x, character.y, character.width, character.height, null);
+        for (PikminUnit p : pikminList) g.drawImage(p.img, p.x, p.y, p.width, p.height, null);
 
         if (drawWhistle) {
             Graphics2D g2d = (Graphics2D) g.create();
@@ -149,10 +189,11 @@ public class Pikmin extends JPanel implements ActionListener, KeyListener {
         mousex = (int) mousePosition.getX();
         mousey = (int) mousePosition.getY();
 
-        int targetX = character.x;
-        int targetY = character.y;
+        int targetX = character.x, targetY = character.y;
         for (PikminUnit p : pikminList) {
-            if (p.following) {
+            if (p.thrown) {
+                p.updateThrow();
+            } else if (p.following) {
                 p.follow(targetX, targetY);
                 targetX = p.x;
                 targetY = p.y;
@@ -163,15 +204,11 @@ public class Pikmin extends JPanel implements ActionListener, KeyListener {
     }
 
     private void updateCharacterAnimation() {
-        if (upPressed) {
-            animate(forwardWalkFrames);
-        } else if (downPressed) {
-            animate(backWalkFrames);
-        } else if (leftPressed) {
-            animate(leftWalkFrames);
-        } else if (rightPressed) {
-            animate(rightWalkFrames);
-        } else {
+        if (upPressed) animate(forwardWalkFrames);
+        else if (downPressed) animate(backWalkFrames);
+        else if (leftPressed) animate(leftWalkFrames);
+        else if (rightPressed) animate(rightWalkFrames);
+        else {
             character.img = idleImage;
             animationIndex = 0;
             animationCounter = 0;
@@ -203,14 +240,21 @@ public class Pikmin extends JPanel implements ActionListener, KeyListener {
             drawWhistle = true;
             Rectangle whistleZone = new Rectangle(character.x - 200, character.y - 200, 500, 500);
             for (PikminUnit p : pikminList) {
-                if (whistleZone.intersects(p.getBounds())) {
-                    p.following = true;
-                }
+                if (whistleZone.intersects(p.getBounds())) p.following = true;
             }
             new Timer(2000, evt -> {
                 drawWhistle = false;
                 ((Timer) evt.getSource()).stop();
             }).start();
+        }
+
+        if (key == KeyEvent.VK_Q) {
+            for (PikminUnit p : pikminList) {
+                if (p.following && !p.thrown) {
+                    p.throwing(mousex, mousey);
+                    break;
+                }
+            }
         }
     }
 
