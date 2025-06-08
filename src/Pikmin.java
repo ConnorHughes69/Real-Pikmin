@@ -10,23 +10,26 @@ public class Pikmin extends JPanel implements ActionListener, KeyListener {
 
     // Images
     Image backgroundImg, whistleImg, pikminImg, idleImage;
-    Image flowerImg;
+    Image flowerImg, pelitFarm, pikminHouse, OmarsShip;
     Image[] backWalkFrames = new Image[7];
     Image[] forwardWalkFrames = new Image[7];
     Image[] leftWalkFrames = new Image[7];
     Image[] rightWalkFrames = new Image[7];
 
-    int animationIndex = 0;
-    int animationCounter = 0;
-    int animationSpeed = 4;
+    int animationIndex = 0, animationCounter = 0, animationSpeed = 4;
 
     class Character {
-        int x = boardWidth / 2, y = boardHeight / 2;
         int width = 85, height = 85;
+        int x = boardWidth / 2 - width / 2;
+        int y = boardHeight - height - 10; // Spawn at bottom
         Image img;
 
         Character(Image img) {
             this.img = img;
+        }
+
+        Rectangle getBounds() {
+            return new Rectangle(x + 20, y + 20, width - 40, height - 40);
         }
     }
 
@@ -80,7 +83,7 @@ public class Pikmin extends JPanel implements ActionListener, KeyListener {
         }
 
         Rectangle getBounds() {
-            return new Rectangle(x, y, width, height);
+            return new Rectangle(x + 20, y + 20, width - 40, height - 40);
         }
     }
 
@@ -95,7 +98,7 @@ public class Pikmin extends JPanel implements ActionListener, KeyListener {
         }
 
         Rectangle getBounds() {
-            return new Rectangle(x, y, 350, 350);
+            return new Rectangle(x + 50, y + 50, 100, 100); // Much smaller hitbox
         }
     }
 
@@ -112,12 +115,16 @@ public class Pikmin extends JPanel implements ActionListener, KeyListener {
         setPreferredSize(new Dimension(boardWidth, boardHeight));
         setFocusable(true);
         addKeyListener(this);
+        requestFocusInWindow();
 
         backgroundImg = new ImageIcon(getClass().getResource("map.png")).getImage();
         whistleImg = new ImageIcon(getClass().getResource("whistle.png")).getImage();
         pikminImg = new ImageIcon(getClass().getResource("Pikmin1.png")).getImage();
         idleImage = new ImageIcon(getClass().getResource("/OmarAnimations/OmarAnimation1idle.png")).getImage();
         flowerImg = new ImageIcon(getClass().getResource("flowerRed1.png")).getImage();
+        pelitFarm = new ImageIcon(getClass().getResource("pelit.png")).getImage();
+        pikminHouse = new ImageIcon(getClass().getResource("homebase.png")).getImage();
+        OmarsShip = new ImageIcon(getClass().getResource("spaceShip.png")).getImage();
 
         for (int i = 0; i < 7; i++) {
             backWalkFrames[i] = new ImageIcon(getClass().getResource("/OmarAnimations/OmarAnimationback" + (i + 1) + ".png")).getImage();
@@ -127,9 +134,11 @@ public class Pikmin extends JPanel implements ActionListener, KeyListener {
         }
 
         character = new Character(idleImage);
-        for (int i = 0; i < 5; i++) pikminList.add(new PikminUnit(100 + i * 60, 600, pikminImg));
 
-        // Add 3 flowers
+        for (int i = 0; i < 5; i++) {
+            pikminList.add(new PikminUnit(100 + i * 60, 600, pikminImg));
+        }
+
         flowerList.add(new Flower(65, 110));
         flowerList.add(new Flower(900, 50));
         flowerList.add(new Flower(800, 500));
@@ -163,31 +172,44 @@ public class Pikmin extends JPanel implements ActionListener, KeyListener {
         }
 
         g.drawImage(character.img, character.x, character.y, character.width, character.height, null);
-        for (PikminUnit p : pikminList) g.drawImage(p.img, p.x, p.y, p.width, p.height, null);
+        g.drawImage(pikminHouse, 245, 185, 220, 220, null);
+        g.drawImage(OmarsShip, 545, 205, 200, 200, null);
+
+        for (PikminUnit p : pikminList) {
+            g.drawImage(p.img, p.x, p.y, p.width, p.height, null);
+        }
 
         if (drawWhistle) {
-            Graphics2D g2d = (Graphics2D) g.create();
-            int centerX = character.x + character.width / 2;
-            int centerY = character.y + character.height / 2;
-            double angle = Math.atan2(mousey - centerY, mousex - centerX);
-            g2d.rotate(angle, centerX, centerY);
-            g2d.drawImage(whistleImg, centerX + 60, centerY - 50, 200, 200, null);
-            g2d.dispose();
+            g.drawImage(whistleImg, mousex - 100, mousey - 100, 200, 200, null);
         }
     }
 
     public void move() {
-        if (upPressed) character.y -= moveSpeed;
-        if (downPressed) character.y += moveSpeed;
-        if (leftPressed) character.x -= moveSpeed;
-        if (rightPressed) character.x += moveSpeed;
+        Rectangle homeBaseBounds = new Rectangle(245, 185, 220, 220);
+        Rectangle shipBounds = new Rectangle(545, 205, 200, 200);
+
+        int nextX = character.x;
+        int nextY = character.y;
+
+        if (upPressed) nextY -= moveSpeed;
+        if (downPressed) nextY += moveSpeed;
+        if (leftPressed) nextX -= moveSpeed;
+        if (rightPressed) nextX += moveSpeed;
+
+        Rectangle nextBounds = new Rectangle(nextX + 20, nextY + 20, character.width - 40, character.height - 40);
+        if (!nextBounds.intersects(homeBaseBounds) && !nextBounds.intersects(shipBounds)) {
+            character.x = nextX;
+            character.y = nextY;
+        }
 
         character.x = Math.max(0, Math.min(character.x, boardWidth - character.width));
         character.y = Math.max(0, Math.min(character.y, boardHeight - character.height));
 
-        Point mousePosition = MouseInfo.getPointerInfo().getLocation();
-        mousex = (int) mousePosition.getX();
-        mousey = (int) mousePosition.getY();
+        Point mousePosition = getMousePosition();
+        if (mousePosition != null) {
+            mousex = mousePosition.x;
+            mousey = mousePosition.y;
+        }
 
         int targetX = character.x, targetY = character.y;
         for (PikminUnit p : pikminList) {
@@ -238,9 +260,11 @@ public class Pikmin extends JPanel implements ActionListener, KeyListener {
 
         if (key == KeyEvent.VK_E) {
             drawWhistle = true;
-            Rectangle whistleZone = new Rectangle(character.x - 200, character.y - 200, 500, 500);
+            Rectangle whistleZone = new Rectangle(mousex - 150, mousey - 150, 300, 300);
             for (PikminUnit p : pikminList) {
-                if (whistleZone.intersects(p.getBounds())) p.following = true;
+                if (whistleZone.intersects(p.getBounds())) {
+                    p.following = true;
+                }
             }
             new Timer(2000, evt -> {
                 drawWhistle = false;
