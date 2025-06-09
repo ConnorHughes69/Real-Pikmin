@@ -1,3 +1,14 @@
+//What to add
+/*
+make it so that when you walk to the top of the screen it brings you to a knew area
+in the new area there should be 2 objectives, collecting ship parts
+one ship part should be protected by an enemy you have to use a pikmin to kill
+and other there should be a ball the Picmin have to break down
+the pikmin should carry the ship parts back to the ship and then you leave and live happy ever after
+also need a title screen 
+
+ */
+
 //imports
 import java.awt.*;
 import java.awt.event.*;
@@ -376,7 +387,10 @@ public class Pikmin extends JPanel implements ActionListener, KeyListener {
         }
     }
 
-    public void actionPerformed(ActionEvent e) { move(); repaint(); }
+    public void actionPerformed(ActionEvent e) {
+        move();
+        repaint();
+    }
 
     public void keyPressed(KeyEvent e) {
         int key = e.getKeyCode();
