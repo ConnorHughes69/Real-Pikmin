@@ -5,7 +5,7 @@ public class Main {
         int boardWidth = 1920;
         int boardHeight = 1040;
 
-        JFrame frame = new JFrame("Flappy Bird");
+        JFrame frame = new JFrame("Pikmin");
         // frame.setVisible(true);
         frame.setSize(boardWidth, boardHeight);
         frame.setLocationRelativeTo(null);

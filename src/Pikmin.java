@@ -23,12 +23,13 @@ public class Pikmin extends JPanel implements ActionListener, KeyListener {
     int boardHeight = 720;
     //creating image variables
     Image backgroundImg, whistleImg, pikminImg, idleImage;
-    Image flowerImg, pelitFarm, pikminHouse, OmarsShip, unbornPikmin;
+    Image flowerImg, pelitFarm, pikminHouse, OmarsShip, unbornPikmin,map2;
     //image list to store images for animations
     Image[] backWalkFrames = new Image[7];
     Image[] forwardWalkFrames = new Image[7];
     Image[] leftWalkFrames = new Image[7];
     Image[] rightWalkFrames = new Image[7];
+    boolean secondMap;
 
     int animationIndex = 0;//used to keep track of where we are in the animation
     int animationCounter = 0; //how fast the frames update
